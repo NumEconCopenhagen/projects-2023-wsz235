@@ -1,6 +1,4 @@
 
-
-
 class HouseholdSpecializationModelClass:
 
     def __init__(self):
@@ -23,6 +21,20 @@ class HouseholdSpecializationModelClass:
         # d. wages
         par.wM = 1.0
         par.wF = 1.0
+        par.wF_vec = np.linspace(0.8,1.2,5)
+
+        # e. targets
+        par.beta0_target = 0.4
+        par.beta1_target = -0.1
+
+        # f. solution
+        sol.LM_vec = np.zeros(par.wF_vec.size)
+        sol.HM_vec = np.zeros(par.wF_vec.size)
+        sol.LF_vec = np.zeros(par.wF_vec.size)
+        sol.HF_vec = np.zeros(par.wF_vec.size)
+
+        #sol.beta0 = np.nan
+        #sol.beta1 = np.nan
 
     def calc_utility(self,LM,HM,LF,HF):
         """ calculate utility """
@@ -33,10 +45,60 @@ class HouseholdSpecializationModelClass:
         # a. consumption of market goods
         C = par.wM*LM + par.wF*LF
 
-    def H(sigma, HM, HF):
-        if sigma = 0:
-            return np.minimum(HM, HF)
-        elif sigma = 1:
-            return HM**(1-alpha)*HF**alpha
+        # b. home production
+        if par.sigma == 0:
+            H = min(HM, HF)
+        elif par.sigma == 1:
+            H = (HM**(1-par.alpha)) * (HF**par.alpha)
         else:
-            return ((1-alpha)*HM**((alpha-1)/alpha) + alpha*HF**((alpha-1)/alpha))**(alpha/(alpha-1))
+            H = (((1-par.alpha) * (HM**((par.sigma-1)/par.sigma))) + (par.alpha * (HF**((par.sigma-1)/par.sigma))))**(par.sigma/(par.sigma-1))
+    
+        # c. total consumption utility
+        Q = C**par.omega*H**(1-par.omega)
+        utility = np.fmax(Q,1e-8)**(1-par.rho)/(1-par.rho)
+
+        # d. disutlity of work
+        TM = LM+HM
+        TF = LF+HF
+        disutility = par.nu*(TM**par.epsilon_/par.epsilon_+TF**par.epsilon_/par.epsilon_)
+        
+        return utility - disutility
+
+    def solve_discrete(self,do_print=False):
+        """ solve model discretely """
+        
+        par = self.par
+        sol = self.sol
+        opt = SimpleNamespace()
+        
+        # a. all possible choices
+        x = np.linspace(0,24,49)
+        LM,HM,LF,HF = np.meshgrid(x,x,x,x) # all combinations
+    
+        LM = LM.ravel() # vector
+        HM = HM.ravel()
+        LF = LF.ravel()
+        HF = HF.ravel()
+
+        # b. calculate utility
+        u = self.calc_utility(LM,HM,LF,HF)
+    
+        # c. set to minus infinity if constraint is broken
+        I = (LM+HM > 24) | (LF+HF > 24) 
+        u[I] = -np.inf
+    
+        # d. find maximizing argument
+        j = np.argmax(u)
+        
+        opt.LM = LM[j]
+        opt.HM = HM[j]
+        opt.LF = LF[j]
+        opt.HF = HF[j]
+
+        # e. print
+        if do_print:
+            for k,v in opt.__dict__.items():
+                print(f'{k} = {v:6.4f}')
+
+        return opt
+    
