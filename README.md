@@ -1,4 +1,4 @@
-# \[wsz235\]
+# \wsz235\
 
 **Group members:**
 - wsz235
