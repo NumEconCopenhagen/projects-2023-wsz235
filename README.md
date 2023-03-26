@@ -1,7 +1,7 @@
 # \[Group name\]
 
 **Group members:**
-- wsz235
+- Caroline Bay
 
 
 This repository contains  
