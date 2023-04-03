@@ -1,3 +1,11 @@
+from types import SimpleNamespace
+import warnings 
+import numpy as np
+from scipy import optimize
+import pandas as pd 
+import matplotlib.pyplot as plt
+import math
+
 
 class HouseholdSpecializationModelClass:
 
@@ -233,4 +241,3 @@ class HouseholdSpecializationModelClass:
               + f"Given the model α is fixed equals {par.alpha:4f}\n\n"
               + f"σ = {sol.sigma_when_alpha_fixed:4f}")
     
-model = HouseholdSpecializationModelClass()
