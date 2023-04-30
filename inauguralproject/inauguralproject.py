@@ -4,8 +4,6 @@ import numpy as np
 from scipy import optimize
 import pandas as pd 
 import matplotlib.pyplot as plt
-import math
-
 
 class HouseholdSpecializationModelClass:
 
@@ -54,9 +52,9 @@ class HouseholdSpecializationModelClass:
         C = par.wM*LM + par.wF*LF
 
         # b. home production
-        if par.sigma == 0.0:
+        if np.isclose(par.sigma, 0.0):
             H = np.minimum(HF, HM)
-        elif par.sigma == 1.0:
+        elif np.isclose(par.sigma, 1.0):
             H = HM**(1-par.alpha)*HF**par.alpha
         else:
             H = ((1-par.alpha)*HM**((par.sigma-1)/par.sigma) + par.alpha * HF**((par.sigma-1)/par.sigma))**(par.sigma/(par.sigma-1))
@@ -114,29 +112,43 @@ class HouseholdSpecializationModelClass:
 
         return opt
     
-    def solve(self,do_print=False):
-        """ solve model continously """
+    def solve_continuous(self,do_print=False):
+        """ solve model continuously """
         
+        # setting up initial parameters
+        par = self.par
+        sol = self.par
         opt = SimpleNamespace()
+
+        # creating objective function for optimize
+        def obj(x):
+            return -self.calc_utility(x[0],x[1],x[2],x[3])
         
-        # a. define an objective function to be optimize
-        def value_of_choice(x):
-            LM, HM, LF, HF = x
-            return -self.calc_utility(LM, HM, LF, HF)
+        # setting up constraints, 24 hour max for H and L
+        constraints = { 'type': 'ineq', 'fun': lambda x: 24 - x[0] - x[1],
+                        'type': 'ineq', 'fun': lambda x: 24 - x[2] - x[3]}
 
-        #defines constraints, bounds and initial value
-        constraints = ({'type': 'ineq', 'fun': lambda HF, LF: 24-HF-LF}, 
-                       {'type': 'ineq', 'fun': lambda HM, LM: 24-HM-LM})
-        bounds = ((0,24), (0,24), (0,24), (0,24))
-        initial_guess = [2, 2, 2, 2]
+        # setting bounds, 24 hours for each 
+        bounds = ((0,24),(0,24),(0,24),(0,24))
 
-        #call on the minimize-solver from the scipy/optimize package
-        solution_continuous = optimize.minimize(value_of_choice, 
-                                                initial_guess, method='Nelder-Mead', 
-                                                bounds=bounds, constraints=constraints)
+        # setting initial guess
+        initial_guess = [12, 12, 12, 12]
 
-        #assigning the optimal values to the SimpleNamespace
-        opt.LM, opt.HM, opt.LF, opt.HF = solution_continuous.x
+        #Optimizing
+        solution = optimize.minimize(obj, initial_guess, method='SLSQP',bounds = bounds, constraints = constraints,tol=1e-10)
+        
+        # saving results
+        opt.LM = solution.x[0]
+        opt.HM = solution.x[1]
+        opt.LF = solution.x[2]
+        opt.HF = solution.x[3]
+
+        if do_print:
+            print(solution.message)
+            print(f'LM: {opt.LM:.4f}')
+            print(f'HM: {opt.HM:.4f}')
+            print(f'LF: {opt.LF:.4f}')
+            print(f'HF: {opt.HF:.4f}')
 
         return opt
 
@@ -152,17 +164,17 @@ class HouseholdSpecializationModelClass:
 
             #solve the model with the discrete solver if keyword argument above is true
             if discrete == True:
-                optimal = self.solve_discrete()
+                opt = self.solve_discrete()
             
             #use the contiuous solver if keyword argument above is false 
-            else:
-                optimal = self.solve()
+            elif discrete == False:                
+                opt = self.solve_continuous()
 
             #store the resulting values 
-            sol.LM_vec[i] = optimal.LM
-            sol.HM_vec[i] = optimal.HM
-            sol.LF_vec[i] = optimal.LF
-            sol.HF_vec[i] = optimal.HF
+            sol.LM_vec[i] = opt.LM
+            sol.HM_vec[i] = opt.HM
+            sol.LF_vec[i] = opt.LF
+            sol.HF_vec[i] = opt.HF
 
         return sol.LM_vec, sol.HM_vec, sol.LF_vec, sol.HF_vec
 
@@ -185,30 +197,31 @@ class HouseholdSpecializationModelClass:
 
         # define an objective function to be minimized
         def objective_function(x):
+
+            #initial parameters
             par.alpha = x[0]
             par.sigma = x[1]
+
+            # solve optimal choice set, account for different wF
             self.solve_wF_vec()
+
+            # run regression for beta_0 and beta_1
             self.run_regression()
-            beta0_diff = par.beta0_target - sol.beta0
-            beta1_diff = par.beta1_target - sol.beta1
-            return beta0_diff**2 + beta1_diff**2
+
+            return (par.beta0_target - sol.beta0)**2 + (par.beta1_target - sol.beta1)**2
 
         # create bounds and initial guess
         bounds = [(0, 1), (0, 5)]
-        initial_guess = [0.8, 1]
+        initial_guess = [0.5, 1]
 
         # call the solver to find the optimal alpha and sigma here
-        solution = optimize.minimize(objective_function, initial_guess, method='SLSQP', bounds=bounds )
+        solution = optimize.minimize(objective_function, initial_guess, method='Nelder-Mead', bounds=bounds)
 
         # create a dictionary to store the results
-        results = {'alpha': solution.x[0], 'sigma': solution.x[1], 'beta0': sol.beta0, 'beta1': sol.beta1}
+        sol.alpha = solution.x[0]
+        sol.sigma = solution.x[1]
 
-        # Printing the results
-        print(f"Results:\n\n"
-          f"beta_0 = {results['beta0']:4f}\n\n"
-          f"beta_1 = {results['beta1']:4f}\n\n"
-          f"α = {results['alpha']:4f}\n\n"
-          f"σ = {results['sigma']:4f}")
+        return sol
         
     def estimate_extension(self, sigma=None):
         '''estimate value of sigma while alpha is fixed to 0.5'''
