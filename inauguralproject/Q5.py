@@ -23,7 +23,7 @@ class HouseholdSpecializationModelClassQ5:
         par.sigma = 1.0
 
         # d. additional disutility of household labor
-        par.include_additional_disutil = False
+        par.include_disutil = False
         par.disutil_HM = 1
         par.disutil_HF = 1
 
@@ -75,7 +75,7 @@ class HouseholdSpecializationModelClassQ5:
         disutility = par.nu*(TM**epsilon_/epsilon_+TF**epsilon_/epsilon_)
         
         # e. additional disutility of household labor
-        additional_disutility = par.include_additional_disutil * (par.disutil_HM * HM**epsilon_/epsilon_ + par.disutil_HF * HF**epsilon_/epsilon_)
+        additional_disutility = par.include_disutil * (par.disutil_HM * HM**epsilon_/epsilon_ + par.disutil_HF * HF**epsilon_/epsilon_)
         
         return utility - disutility - additional_disutility
 
