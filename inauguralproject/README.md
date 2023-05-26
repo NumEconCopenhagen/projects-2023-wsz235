@@ -1,7 +1,7 @@
 # Inaugural project
 
-This project examines a model that explains how a household divide and specialize their labour to maximize utility and productivity. A household divides their time and labour into two markets, with each member specializing in the task that they are most efficient at completing. The household has two members, a female and a male memeber and can be used to explain gender roles within households. 
+This project explores a model that aims to understand how households allocate their time and labor to maximize overall utility. The model focuses on a two-member household, where each member engages in two distinct markets: market work and home production. In addition to the original model, an extension is introduced in this project by incorporating disutility of household production, which can influence their decision-making regarding the allocation of time between market work and home production.
 
-In this project, we will explore how the model can be used to analyze and improve the efficiency of household production.
+The results of the project can be seen from running inauguralproject.ipynb.
 
 The **results** of the project can be seen from running [inauguralproject.ipynb].

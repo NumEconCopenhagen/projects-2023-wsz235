@@ -1,6 +1,6 @@
 # Data analysis project
 
-Our project is titled 'The Gender Wage Gap and Part-time workers' and is about examine the trends and patterns of the gender wage gap and part-time work in different sectors and understand the factors that may contribute to these differences..
+Our project is titled 'The Gender Wage Gap and Part-time workers' and is about examine the trends and patterns of the gender wage gap and part-time work in different sectors and understand the factors that may contribute to these differences.
 
 The **results** of the project can be seen from running [dataproject.ipynb](dataproject.ipynb).
 

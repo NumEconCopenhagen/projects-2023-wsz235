@@ -223,34 +223,3 @@ class HouseholdSpecializationModelClass:
 
         return sol
         
-    def estimate_extension(self, sigma=None):
-        '''estimate value of sigma while alpha is fixed to 0.5'''
-
-        par = self.par
-        sol = self.sol
-
-        # setting alpha to 0.5 as specified
-        par.alpha = 0.5
-
-        # define objective function
-        def objective_function(x):
-            par.sigma = x
-            self.solve_wF_vec()
-            self.run_regression()
-            return(par.beta0_target-sol.beta0)**2 + (par.beta1_target-sol.beta1)**2
-        
-        # create bounds and initial guess
-        bounds = [(0, 5)]
-        initial_guess = [2]
-
-        # call the solver to find the optimal sigma here
-        solution2 = optimize.minimize(objective_function, initial_guess, bounds=bounds, method='SLSQP')
-
-        # creating variable to store the optimal sigma the solver found
-        sol.sigma_when_alpha_fixed = solution2.x[0]
-
-        # printing the result 
-        print(f"Result:\n\n"
-              + f"Given the model α is fixed equals {par.alpha:4f}\n\n"
-              + f"σ = {sol.sigma_when_alpha_fixed:4f}")
-    
